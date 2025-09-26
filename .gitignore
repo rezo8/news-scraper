@@ -1,5 +1,23 @@
+# Scala specific
 *.class
 *.log
+*.cache
+*.project
+*.idea
+*.iml
+*.iws
+.DS_Store
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
-hs_err_pid*
+# sbt specific
+target/
+project/target/
+project/project/
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# MacOS specific
+.DS_Store
