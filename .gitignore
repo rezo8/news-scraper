@@ -21,3 +21,8 @@ project/project/
 
 # MacOS specific
 .DS_Store
+
+# Metals
+.metals/
+.metals
+.metals/metals.mv.db
