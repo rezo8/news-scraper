@@ -19,9 +19,7 @@ class ArticleService(config: KafkaConfig, producer: Producer) {
              .mapZIOChunked(article =>
                ZIO.succeed(new ProducerRecord(config.topic, ProcessArticleEvent(article)))
              )
-             .via(
-               producer.produceAll(Serde.int, ProcessArticleEvent.serde)
-             )
+             .via(producer.produceAll(Serde.int, ProcessArticleEvent.serde))
              .runDrain
     } yield ()
   }
@@ -29,7 +27,6 @@ class ArticleService(config: KafkaConfig, producer: Producer) {
   def getAllProcessedArticles(): ZIO[Any, Nothing, List[String]] = {
     ZIO.succeed(List("article1", "article2", "article3"))
   }
-
 }
 
 object ArticleService {
