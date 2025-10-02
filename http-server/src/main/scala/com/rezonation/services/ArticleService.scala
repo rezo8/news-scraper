@@ -6,9 +6,9 @@ import zio.kafka.consumer._
 import zio.kafka.producer.{Producer, ProducerSettings}
 import zio.kafka.serde._
 import zio.stream.ZStream
-import com.rezonation.types.events.ProcessArticleEvent
 import org.apache.kafka.clients.producer.ProducerRecord
 import com.rezonation.config.KafkaConfig
+import com.rezonation.types.events.ProcessArticleEvent
 
 // TODO make topic be in config.
 class ArticleService(config: KafkaConfig, producer: Producer) {

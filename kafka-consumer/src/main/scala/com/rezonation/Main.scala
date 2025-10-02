@@ -5,6 +5,8 @@ import zio.kafka.consumer._
 import zio.kafka.serde._
 import zio.*
 import zio.kafka.consumer.{Consumer, ConsumerSettings}
+import com.rezonation.types.events.ProcessArticleEvent
+import com.rezonation.services.ArticleIngester
 
 object Main extends ZIOAppDefault {
 
@@ -19,17 +21,24 @@ object Main extends ZIOAppDefault {
     ZIO
       .scoped {
         for {
-          consumer <- ZIO.service[Consumer]
-          _        <- consumer
-              .plainStream(Subscription.topics("article-events"), Serde.string, Serde.string) 
-              .tap(cr => ZIO.log(s"key: ${cr.record.key}, value: ${cr.record.value}"))        
-              .map(_.offset)                                                                  
-              .aggregateAsync(Consumer.offsetBatches)                                         
-              .mapZIO(_.commit)                                                               
-              .runDrain
-          _        <- ZIO.logInfo("Kafka Consumer started")
+          articleIngester <- ZIO.service[ArticleIngester]
+          consumer        <- ZIO.service[Consumer]
+          _               <- consumer
+                               .plainStream(
+                                 Subscription.topics("article-events"),
+                                 Serde.string,
+                                 ProcessArticleEvent.serde
+                               )
+                               .tap(cr => ZIO.log(s"key: ${cr.record.key}, value: ${cr.record.value}"))
+                               .mapZIO { cr =>
+                                 articleIngester.ingestArticles(List(cr.record.value)) *> ZIO.succeed(cr.offset)
+                               }
+                               .aggregateAsync(Consumer.offsetBatches)
+                               .mapZIO(_.commit)
+                               .runDrain
+          _               <- ZIO.logInfo("Kafka Consumer started")
         } yield ()
       }
-      .provide(consumerLayer)
+      .provide(consumerLayer, ArticleIngester.live)
   }
 }
