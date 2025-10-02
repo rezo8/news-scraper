@@ -34,11 +34,7 @@ object Main extends ZIOAppDefault {
         for {
           articleRoutes <- ZIO.service[ArticleRoutes]
           app            = articleRoutes.routes
-          _             <-
-            Server
-              .serve(app)
-              .flatMap(port => ZIO.debug(s"Server started on http://localhost:$port") *> ZIO.never)
-              .provide(Server.configured())
+          _             <- Server.serve(app).provide(Server.defaultWithPort(8080))
         } yield ()
       }
       .provide(kafkaConfigLayer, articleServiceLayer, articleRoutesLayer)

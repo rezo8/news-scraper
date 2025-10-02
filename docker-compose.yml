@@ -18,3 +18,11 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+  kafka-cli:
+    image: bitnami/kafka:latest
+    container_name: kafka-cli
+    depends_on:
+      - broker
+    environment:
+      KAFKA_BROKER: broker:9092
+    entrypoint: [ "/bin/bash", "-c", "tail -f /dev/null" ]
