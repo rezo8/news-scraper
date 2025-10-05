@@ -27,6 +27,8 @@ lazy val httpServer = project
     libraryDependencies ++= Seq(
       "dev.zio" %% "zio-http" % "3.5.1",
       "dev.zio" %% "zio-config"          % "4.0.5",
+      "dev.zio" %% "zio-test"            % "2.0.21" % Test, // Ensure this is included
+      "dev.zio" %% "zio-test-sbt"        % "2.0.21" % Test, // Required for running tests with sbt
       "dev.zio" %% "zio-config-magnolia" % "4.0.5",
       "dev.zio" %% "zio-config-typesafe" % "4.0.5",
       "dev.zio" %% "zio-config-refined"  % "4.0.5"
@@ -42,6 +44,10 @@ lazy val kafkaConsumer = project
       "dev.zio" %% "zio-config"          % "4.0.5",
       "dev.zio" %% "zio-config-magnolia" % "4.0.5",
       "dev.zio" %% "zio-config-typesafe" % "4.0.5",
+      "dev.zio" %% "zio-test"            % "2.0.21" % Test, // Ensure this is included
+      "dev.zio" %% "zio-test-sbt"        % "2.0.21" % Test, // Required for running tests with sbt
+      // "org.apache.spark" %% "spark-sql" % "3.4.1", TODO lets use Spark in the future :D
+      // "com.johnsnowlabs.nlp" %% "spark-nlp" % "5.4.4", 
       "dev.zio" %% "zio-config-refined"  % "4.0.5",
       "net.ruippeixotog" %% "scala-scraper" % "3.2.0",
       "net.dankito.readability4j" % "readability4j" % "1.0.8"
