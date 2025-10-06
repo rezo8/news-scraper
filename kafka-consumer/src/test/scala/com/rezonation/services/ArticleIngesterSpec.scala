@@ -8,6 +8,8 @@ import com.rezonation.mocks.MockNLPProcessor
 import net.dankito.readability4j.Article
 
 object ArticleIngesterSpec extends ZIOSpecDefault {
+  val nlpProcessor = new MockNLPProcessor()
+  val ingester     = new ArticleIngester(nlpProcessor)
 
   override def spec = suite("ArticleIngesterSpec")(
     test("ingestArticles should process a list of ProcessArticleEvent") {
@@ -19,15 +21,8 @@ object ArticleIngesterSpec extends ZIOSpecDefault {
         )
       )
 
-      // Create a mock ArticleIngester with a stubbed ingestArticle method
-      val nlpProcessor = new MockNLPProcessor()
-      val ingester     = new ArticleIngester(nlpProcessor)
-
-      // Act: Call ingestArticles
       val result = ingester.ingestArticles(mockEvents)
-      print("HELLO")
 
-      // Assert: Verify that the method runs without errors
       assertZIO(result)(isUnit)
     }
   )

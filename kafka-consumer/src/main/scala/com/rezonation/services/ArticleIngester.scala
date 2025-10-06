@@ -27,6 +27,7 @@ class ArticleIngester(nlpProcessor: NLPProcessor) {
       x       = new Readability4J(event.url, source)
       article = x.parse()
       tags   <- extractTags(article)
+      _      <- ZIO.log(s"Extracted tags: ${tags.mkString(", ")}")
       // Compose processed article to prepare for DB
     } yield ()
   }
