@@ -31,7 +31,8 @@ lazy val httpServer = project
       "dev.zio" %% "zio-test-sbt"        % "2.0.21" % Test, // Required for running tests with sbt
       "dev.zio" %% "zio-config-magnolia" % "4.0.5",
       "dev.zio" %% "zio-config-typesafe" % "4.0.5",
-      "dev.zio" %% "zio-config-refined"  % "4.0.5"
+      "dev.zio" %% "zio-config-refined"  % "4.0.5",
+      "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % "8.10.0", // Elastic4s client
     ) ++ commonDeps
   )
 
