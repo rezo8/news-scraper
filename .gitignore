@@ -27,3 +27,5 @@ project/project/
 .metals/
 .metals
 .metals/metals.mv.db
+
+*.env

@@ -23,7 +23,7 @@ object ArticleIngesterSpec extends ZIOSpecDefault {
 
       val result = ingester.ingestArticles(mockEvents)
 
-      assertZIO(result)(isUnit)
+      assertZIO(result)(isNonEmpty)
     }
   )
 }
