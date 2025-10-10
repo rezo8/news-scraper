@@ -8,6 +8,8 @@
 *.iws
 .DS_Store
 
+*.env 
+
 # sbt specific
 target/
 project/target/
