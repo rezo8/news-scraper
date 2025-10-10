@@ -9,7 +9,7 @@ import net.dankito.readability4j.Article
 
 object ArticleIngesterSpec extends ZIOSpecDefault {
   val nlpProcessor = new MockNLPProcessor()
-  val ingester     = new ArticleIngester(nlpProcessor)
+  val ingester     = new ArticleAnalyzer(nlpProcessor)
 
   override def spec = suite("ArticleIngesterSpec")(
     test("ingestArticles should process a list of ProcessArticleEvent") {
