@@ -6,7 +6,7 @@ import zio.kafka.serde._
 import zio.*
 import zio.kafka.consumer.{Consumer, ConsumerSettings}
 import com.rezonation.types.events.ProcessArticleEvent
-import com.rezonation.services.ArticleIngester
+import com.rezonation.services.ArticleAnalyzer
 
 object Main extends ZIOAppDefault {
 
@@ -21,7 +21,7 @@ object Main extends ZIOAppDefault {
     ZIO
       .scoped {
         for {
-          articleIngester <- ZIO.service[ArticleIngester]
+          articleAnalyzer <- ZIO.service[ArticleAnalyzer]
           consumer        <- ZIO.service[Consumer]
           _               <- consumer
                                .plainStream(
@@ -29,16 +29,32 @@ object Main extends ZIOAppDefault {
                                  Serde.string,
                                  ProcessArticleEvent.serde
                                )
-                               .tap(cr => ZIO.log(s"key: ${cr.record.key}, value: ${cr.record.value}"))
-                               .mapZIO { cr =>
-                                 articleIngester.ingestArticles(List(cr.record.value)) *> ZIO.succeed(cr.offset)
+                               .groupedWithin(100, 1.second)
+                               .tap(records =>
+                                 records.mapZIO(r => ZIO.log(s"key: ${r.record.key}, value: ${r.record.value}"))
+                               )
+                               .mapZIO { recordBatch =>
+                                 {
+                                   val events = recordBatch.map(_.record.value).toList
+                                   articleAnalyzer
+                                     .ingestArticles(events)
+                                     .map(articles => {
+                                       articles.foreach(article =>
+                                         println(
+                                           s"Analyzed Article: URL=${article.url}, Title=${article.title}, Tags=${article.tags
+                                               .mkString(", ")}"
+                                         )
+                                       )
+                                     })
+                                     .as(recordBatch.map(_.offset))
+                                 }
+
                                }
-                               .aggregateAsync(Consumer.offsetBatches)
-                               .mapZIO(_.commit)
+                               .mapZIO(offsets => OffsetBatch(offsets).commit)
                                .runDrain
           _               <- ZIO.logInfo("Kafka Consumer started")
         } yield ()
       }
-      .provide(consumerLayer, ArticleIngester.live)
+      .provide(consumerLayer, ArticleAnalyzer.live)
   }
 }
