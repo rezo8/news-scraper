@@ -1,11 +1,10 @@
 package com.rezonation.services
 
-import zio._
-import zio.test._
-import zio.test.Assertion._
-import com.rezonation.types.events.ProcessArticleEvent
 import com.rezonation.mocks.MockNLPProcessor
-import net.dankito.readability4j.Article
+import com.rezonation.types.events.ProcessArticleEvent
+import zio.*
+import zio.test.*
+import zio.test.Assertion.*
 
 object ArticleIngesterSpec extends ZIOSpecDefault {
   val nlpProcessor = new MockNLPProcessor()
@@ -13,7 +12,6 @@ object ArticleIngesterSpec extends ZIOSpecDefault {
 
   override def spec = suite("ArticleIngesterSpec")(
     test("ingestArticles should process a list of ProcessArticleEvent") {
-      // Arrange: Create a mock list of ProcessArticleEvent
       val mockEvents = List(
         // ProcessArticleEvent("https://example.com/article1"),
         ProcessArticleEvent(
