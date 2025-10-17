@@ -47,7 +47,6 @@ object Main extends ZIOAppDefault {
               }
               .mapZIO(offsets => OffsetBatch(offsets).commit)
               .runDrain
-          _               <- ZIO.logInfo("Kafka Consumer started")
         } yield ()
       }
       .provide(articlesRepositoryLayer, ArticleIngestion.live)
