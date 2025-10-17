@@ -1,9 +1,8 @@
-package com.rezonation.services
+package com.rezonation.clients
 
-import com.sksamuel.elastic4s.ElasticClient
-import com.sksamuel.elastic4s.ElasticProperties
+import com.sksamuel.elastic4s.{ElasticClient, ElasticProperties}
 import com.sksamuel.elastic4s.http.JavaClient
-import zio._
+import zio.*
 
 object Elastic4sClient {
 

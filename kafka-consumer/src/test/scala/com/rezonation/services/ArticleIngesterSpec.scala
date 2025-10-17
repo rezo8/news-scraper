@@ -8,9 +8,9 @@ import zio.test.Assertion.*
 
 object ArticleIngesterSpec extends ZIOSpecDefault {
   val nlpProcessor = new MockNLPProcessor()
-  val ingester     = new ArticleAnalyzer(nlpProcessor)
+  val ingester     = new ArticleIngestion(nlpProcessor)
 
-  override def spec = suite("ArticleIngesterSpec")(
+  override def spec: Spec[Any, Throwable] = suite("ArticleIngesterSpec")(
     test("ingestArticles should process a list of ProcessArticleEvent") {
       val mockEvents = List(
         // ProcessArticleEvent("https://example.com/article1"),

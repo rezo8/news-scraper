@@ -1,13 +1,13 @@
 package com.rezonation
 
-import zio._
-import zio.http._
-
+import zio.*
+import zio.http.*
 import com.rezonation.config.KafkaConfig
 import zio.kafka.producer.Producer
 import zio.kafka.producer.ProducerSettings
 import com.rezonation.services.ArticleService
 import com.rezonation.http.routes.ArticleRoutes
+import com.rezonation.repositories.ArticlesRepository
 
 object Main extends ZIOAppDefault {
 
@@ -23,7 +23,7 @@ object Main extends ZIOAppDefault {
     }
 
   val articleServiceLayer: ZLayer[KafkaConfig, Throwable, ArticleService] =
-    (kafkaConfigLayer ++ producerLayer) >>> ArticleService.live
+    (kafkaConfigLayer ++ producerLayer ++ ArticlesRepository.live) >>> ArticleService.live
 
   val articleRoutesLayer: ZLayer[KafkaConfig & ArticleService, Throwable, ArticleRoutes] =
     articleServiceLayer >>> ArticleRoutes.live

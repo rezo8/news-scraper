@@ -1,32 +1,39 @@
 package com.rezonation.http.routes
 
-import zio._
-import zio.http._
 import com.rezonation.services.ArticleService
-import zio.http._
+import com.rezonation.types.responses.FetchArticlesResponse
+import zio.*
+import zio.http.*
+import zio.json.*
 
 class ArticleRoutes(articleService: ArticleService) {
   val baseRoute = "articles"
 
   val routes: Routes[Any, Response] = Routes(
     Method.GET / baseRoute             -> handler { (req: Request) =>
-      for {
-        processedArticles <- articleService.getAllProcessedArticles()
-      } yield Response.text(processedArticles.mkString(", ")) // TODO Response pattern
+      fetchProcessedArticles()
     },
     Method.POST / baseRoute / "submit" -> handler { (req: Request) =>
       {
         val articleUrls = req.url.queryParams.getAll("url").toList
-        for {
-          _ <- articleService
-                 .submitArticlesForProcessing(articleUrls)
-                 .catchAll(error =>
-                   ZIO.succeed(Response.error(Status.InternalServerError, error.getMessage))
-                 )
-        } yield Response.text("Articles submitted for processing")
+        submitArticles(articleUrls) *> ZIO.succeed(
+          Response.text("Articles submitted for processing")
+        )
       }
     }
   )
+
+  private def fetchProcessedArticles(): ZIO[Any, Nothing, Response] = {
+    articleService.getAllProcessedArticles
+      .map(articles => Response.text(FetchArticlesResponse(articles).toJson))
+      .catchAll(error => ZIO.succeed(Response.error(Status.InternalServerError, error.getMessage)))
+  }
+
+  private def submitArticles(articleUrls: List[String]): ZIO[Any, Nothing, Unit] = {
+    articleService
+      .submitArticlesForProcessing(articleUrls)
+      .catchAll(error => ZIO.succeed(Response.error(Status.InternalServerError, error.getMessage)))
+  }
 }
 
 // Usage with ZLayer
