@@ -8,6 +8,8 @@
 *.iws
 .DS_Store
 
+*.env
+
 # sbt specific
 target/
 project/target/
@@ -27,5 +29,7 @@ project/project/
 .metals/
 .metals
 .metals/metals.mv.db
+
+.bsp/sbt.json
 
 *.env

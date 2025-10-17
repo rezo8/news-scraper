@@ -1,17 +1,23 @@
 package com.rezonation.services
-import zio._
-import zio.http._
-import zio._
-import zio.kafka.consumer._
+import zio.*
+import zio.http.*
+import zio.*
+import zio.kafka.consumer.*
 import zio.kafka.producer.{Producer, ProducerSettings}
-import zio.kafka.serde._
+import zio.kafka.serde.*
 import zio.stream.ZStream
 import org.apache.kafka.clients.producer.ProducerRecord
 import com.rezonation.config.KafkaConfig
 import com.rezonation.types.events.ProcessArticleEvent
+import com.rezonation.repositories.ArticlesRepository
+import com.rezonation.types.database.AnalyzedArticle
 
 // TODO make topic be in config.
-class ArticleService(config: KafkaConfig, producer: Producer) {
+class ArticleService(
+    config: KafkaConfig,
+    producer: Producer,
+    articlesRepository: ArticlesRepository
+) {
   def submitArticlesForProcessing(articles: List[String]): ZIO[Any, Throwable, Unit] = {
     for {
       _ <- ZStream
@@ -24,14 +30,16 @@ class ArticleService(config: KafkaConfig, producer: Producer) {
     } yield ()
   }
 
-  def getAllProcessedArticles(): ZIO[Any, Nothing, List[String]] = {
-    ZIO.succeed(List("article1", "article2", "article3"))
+  def getAllProcessedArticles: ZIO[Any, Throwable, List[AnalyzedArticle]] = {
+    for {
+      articles <- articlesRepository.getAllArticles
+    } yield articles
   }
 }
 
 object ArticleService {
 
-  def live: ZLayer[KafkaConfig & Producer, Nothing, ArticleService] =
-    ZLayer.fromFunction(new ArticleService(_, _))
+  def live: ZLayer[KafkaConfig & Producer & ArticlesRepository, Nothing, ArticleService] =
+    ZLayer.fromFunction(new ArticleService(_, _, _))
 
 }

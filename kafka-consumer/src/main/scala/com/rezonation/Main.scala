@@ -1,60 +1,54 @@
 package com.rezonation
 
-import zio._
-import zio.kafka.consumer._
-import zio.kafka.serde._
-import zio.*
-import zio.kafka.consumer.{Consumer, ConsumerSettings}
+import com.rezonation.repositories.ArticlesRepository
+import com.rezonation.services.ArticleIngestion
 import com.rezonation.types.events.ProcessArticleEvent
-import com.rezonation.services.ArticleAnalyzer
+import zio.*
+import zio.kafka.consumer.*
+import zio.kafka.consumer.Consumer.{AutoOffsetStrategy, OffsetRetrieval}
+import zio.kafka.serde.*
 
 object Main extends ZIOAppDefault {
 
-  val consumerLayer: Layer[Any, Consumer] =
-    ZLayer.scoped { // (1)
-      val consumerSettings: ConsumerSettings =
-        ConsumerSettings(List("localhost:9092")).withGroupId("group")
-      Consumer.make(consumerSettings)
-    }
-
+  private val articlesRepositoryLayer                         = ArticlesRepository.live
   override def run: ZIO[Any & (ZIOAppArgs & Scope), Any, Any] = {
     ZIO
       .scoped {
         for {
-          articleAnalyzer <- ZIO.service[ArticleAnalyzer]
-          consumer        <- ZIO.service[Consumer]
-          _               <- consumer
-                               .plainStream(
-                                 Subscription.topics("article-events"),
-                                 Serde.string,
-                                 ProcessArticleEvent.serde
-                               )
-                               .groupedWithin(100, 1.second)
-                               .tap(records =>
-                                 records.mapZIO(r => ZIO.log(s"key: ${r.record.key}, value: ${r.record.value}"))
-                               )
-                               .mapZIO { recordBatch =>
-                                 {
-                                   val events = recordBatch.map(_.record.value).toList
-                                   articleAnalyzer
-                                     .ingestArticles(events)
-                                     .map(articles => {
-                                       articles.foreach(article =>
-                                         println(
-                                           s"Analyzed Article: URL=${article.url}, Title=${article.title}, Tags=${article.tags
-                                               .mkString(", ")}"
-                                         )
-                                       )
-                                     })
-                                     .as(recordBatch.map(_.offset))
-                                 }
-
-                               }
-                               .mapZIO(offsets => OffsetBatch(offsets).commit)
-                               .runDrain
-          _               <- ZIO.logInfo("Kafka Consumer started")
+          articleAnalyzer <- ZIO.service[ArticleIngestion]
+          // TODO Make this consumer poolable.
+          consumer        <- Consumer.make(
+                               ConsumerSettings(List("localhost:9092"))
+                                 .withGroupId("articleConsumer")
+                                 .withOffsetRetrieval(OffsetRetrieval.Auto(AutoOffsetStrategy.Latest))
+                             )
+          _               <-
+            consumer
+              .plainStream(
+                Subscription.topics("article-events"),
+                Serde.string,
+                ProcessArticleEvent.serde
+              )
+              .groupedWithin(100, 1.second)
+              .mapZIO { recordBatch =>
+                articleAnalyzer
+                  .ingestArticles(recordBatch.map(_.record.value).toList)
+                  .flatMap(articles =>
+                    ZIO.logInfo(
+                      s"Ingested ${articles.length} articles. URLS: ${articles.map(_.url).mkString(", ")}"
+                    )
+                  )
+                  .as(recordBatch.map(_.offset))
+                  // TODO this fails on 30 second timeout when ES is down which is much too long.
+                  .tapError(error =>
+                    ZIO.logError(s"Failed to ingest articles: ${error.getMessage}")
+                  )
+                  .retry(Schedule.forever)
+              }
+              .mapZIO(offsets => OffsetBatch(offsets).commit)
+              .runDrain
         } yield ()
       }
-      .provide(consumerLayer, ArticleAnalyzer.live)
+      .provide(articlesRepositoryLayer, ArticleIngestion.live)
   }
 }
