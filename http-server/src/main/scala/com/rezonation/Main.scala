@@ -1,13 +1,11 @@
 package com.rezonation
 
-import zio.*
-import zio.http.*
 import com.rezonation.config.KafkaConfig
-import zio.kafka.producer.Producer
-import zio.kafka.producer.ProducerSettings
-import com.rezonation.services.ArticleService
-import com.rezonation.http.routes.ArticleRoutes
+import com.rezonation.http.InternalServer
 import com.rezonation.repositories.ArticlesRepository
+import com.rezonation.services.ArticleService
+import zio.*
+import zio.kafka.producer.{Producer, ProducerSettings}
 
 object Main extends ZIOAppDefault {
 
@@ -25,18 +23,9 @@ object Main extends ZIOAppDefault {
   val articleServiceLayer: ZLayer[KafkaConfig, Throwable, ArticleService] =
     (kafkaConfigLayer ++ producerLayer ++ ArticlesRepository.live) >>> ArticleService.live
 
-  val articleRoutesLayer: ZLayer[KafkaConfig & ArticleService, Throwable, ArticleRoutes] =
-    articleServiceLayer >>> ArticleRoutes.live
-
   override def run: ZIO[Any & (ZIOAppArgs & Scope), Any, Any] = {
     ZIO
-      .scoped {
-        for {
-          articleRoutes <- ZIO.service[ArticleRoutes]
-          app            = articleRoutes.routes
-          _             <- Server.serve(app).provide(Server.defaultWithPort(8080))
-        } yield ()
-      }
-      .provide(kafkaConfigLayer, articleServiceLayer, articleRoutesLayer)
+      .scoped { InternalServer.serve() }
+      .provide(kafkaConfigLayer, articleServiceLayer)
   }
 }

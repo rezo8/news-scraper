@@ -11,6 +11,7 @@ val commonDeps = Seq(
 )
 
 // Common Kafka Messages Project
+// TODO rename this.
 lazy val kafkaCommon = (project in file("kafka-common"))
   .settings(
     name         := "kafka-common",
