@@ -10,10 +10,14 @@ import zio.json.*
 class ArticlesRepository(client: ElasticClient) {
   private val indexName = "articles"
 
+  // We ONLY create here. Since differing content will result in a differentId, there is no collision.
   def indexArticles(articles: List[AnalyzedArticle]): ZIO[Any, Throwable, Unit] =
     ZIO.fromFuture { implicit ec =>
       val bulkRequests = articles.map { article =>
-        indexInto(indexName).id(article.id.toString).doc(article.toJson)
+        indexInto(indexName)
+          .id(article.id.toString)
+          .doc(article.toJson)
+          .createOnly(true)
       }
       client
         .execute {
