@@ -11,7 +11,9 @@ final case class AnalyzedArticle(
     url: String,
     title: String,
     articleText: String,
-    id: UUID = randomUUID()
+    id: UUID = randomUUID(),
+    createdAt: Long = System.currentTimeMillis(),
+    updatedAt: Long = System.currentTimeMillis()
 )
 
 object AnalyzedArticle {
