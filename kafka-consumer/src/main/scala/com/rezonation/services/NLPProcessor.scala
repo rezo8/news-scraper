@@ -10,38 +10,48 @@ trait NLPProcessor {
 }
 
 class NLPProcessorImpl extends NLPProcessor {
-  private val stopWords = Set(
-    "the",
+  private val stopWords           = Set(
     "a",
+    "all",
     "an",
     "and",
-    "or",
-    "but",
-    "is",
     "are",
-    "was",
-    "were",
-    "in",
-    "on",
-    "at",
-    "of",
-    "for",
-    "to",
-    "with",
-    "from",
-    "by",
-    "it",
-    "this",
-    "that",
-    "these",
-    "those",
     "as",
+    "at",
     "be",
     "been",
+    "but",
+    "by",
+    "city",
+    "el",
+    "end",
+    "for",
+    "from",
     "has",
-    "have"
+    "have",
+    "in",
+    "is",
+    "it",
+    "its",
+    "last",
+    "least",
+    "not",
+    "of",
+    "on",
+    "or",
+    "people",
+    "said",
+    "that",
+    "the",
+    "these",
+    "this",
+    "those",
+    "to",
+    "was",
+    "were",
+    "will",
+    "with"
   )
-
   // Only alphabetic tokens of length >= 2 (lowercase expected)
   private val tokenPattern: Regex = "[a-z]{2,}".r
 
@@ -85,11 +95,27 @@ class NLPProcessorImpl extends NLPProcessor {
                     term -> combined
                   }
 
-                  scores.toList
+                  val sorted = scores.toList
                     .sortBy { case (t, score) => (-score, t) }
                     .map(_._1)
                     .distinct
                     .take(maxKeywords)
+
+                  // Remove terms that are substrings of other selected terms
+                  val filtered =
+                    sorted.filter(term => !sorted.exists(x => x != term && x.contains(term)))
+
+                  // Track removed terms
+                  val removed = sorted.diff(filtered)
+
+                  // Refill only with terms not in filtered or removed
+                  val refill = sorted
+                    .filter(term => !filtered.contains(term) && !removed.contains(term))
+                    .take(maxKeywords - filtered.size)
+
+                  val result = filtered ++ refill
+
+                  result
                 }
               }
     } yield tags)
@@ -98,10 +124,4 @@ class NLPProcessorImpl extends NLPProcessor {
 object NLPProcessor {
   val live: ZLayer[Any, Nothing, NLPProcessor] =
     ZLayer.succeed(new NLPProcessorImpl())
-
-  def extractKeywords(
-      text: String,
-      maxKeywords: Int = 10
-  ): ZIO[NLPProcessor, Throwable, List[String]] =
-    ZIO.serviceWithZIO[NLPProcessor](_.extractKeywords(text, maxKeywords))
 }

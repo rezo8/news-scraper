@@ -17,7 +17,6 @@ class ArticlesRepository(client: ElasticClient) {
         indexInto(indexName)
           .id(article.id.toString)
           .doc(article.toJson)
-          .createOnly(true)
       }
       client
         .execute {

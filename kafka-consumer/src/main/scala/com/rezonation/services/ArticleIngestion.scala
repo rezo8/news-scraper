@@ -5,6 +5,7 @@ import com.rezonation.types.database.AnalyzedArticle
 import com.rezonation.types.events.ProcessArticleEvent
 import net.dankito.readability4j.{Article, Readability4J}
 import zio.{Scope, ZIO, ZLayer}
+import org.jsoup.Jsoup
 
 import scala.io.Source
 import scala.language.postfixOps
@@ -45,8 +46,9 @@ class ArticleIngestion(nlpProcessor: NLPProcessor, articlesRepository: ArticlesR
       article: Article,
       keywordCount: Int = 10
   ): ZIO[Any, Throwable, List[String]] = {
+    val cleanedHtml = Jsoup.parse(article.getContent).text()
     for {
-      tags <- nlpProcessor.extractKeywords(article.getContent, keywordCount)
+      tags <- nlpProcessor.extractKeywords(cleanedHtml, keywordCount)
     } yield tags
   }
 }
