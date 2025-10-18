@@ -7,6 +7,7 @@ import net.dankito.readability4j.{Article, Readability4J}
 import zio.{Scope, ZIO, ZLayer}
 
 import scala.io.Source
+import scala.language.postfixOps
 
 class ArticleIngestion(nlpProcessor: NLPProcessor, articlesRepository: ArticlesRepository) {
 
@@ -25,20 +26,20 @@ class ArticleIngestion(nlpProcessor: NLPProcessor, articlesRepository: ArticlesR
   }
 
   private def ingestArticle(event: ProcessArticleEvent): ZIO[Scope, Throwable, AnalyzedArticle] =
-    ZIO
-      .acquireRelease(ZIO.attempt(Source.fromURL(event.url, "UTF-8")))(source =>
-        ZIO.attempt(source.close()).orDie
-      )
-      .flatMap { source =>
-        for {
-          _       <- ZIO.log(s"Processing article from URL: ${event.url}")
-          content <- ZIO.attempt(source.mkString)
-          x        = new Readability4J(event.url, content)
-          article  = x.parse()
-          tags    <- extractTags(article)
-          _       <- ZIO.log(s"Extracted tags: ${tags.mkString(", ")}")
-        } yield AnalyzedArticle(tags, event.url, article.getTitle, article.getContent)
-      }
+    ZIO.logAnnotate("correlation_id", event.correlationId) {
+      ZIO
+        .acquireRelease(ZIO.attempt(Source.fromURL(event.url, "UTF-8")))(source =>
+          ZIO.attempt(source.close()).orDie
+        )
+        .flatMap { source =>
+          for {
+            _       <- ZIO.logInfo(s"Processing article from URL: ${event.url}")
+            content <- ZIO.attempt(source.mkString)
+            article  = new Readability4J(event.url, content).parse()
+            tags    <- extractTags(article)
+          } yield AnalyzedArticle(tags, event.url, article.getTitle, article.getContent)
+        }
+    }
 
   private def extractTags(
       article: Article,
