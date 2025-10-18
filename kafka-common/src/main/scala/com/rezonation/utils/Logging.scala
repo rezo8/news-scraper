@@ -9,6 +9,6 @@ object Logging {
       result  <- zio
       end     <- Clock.nanoTime
       duration = (end - start).nanos
-      _       <- ZIO.logAnnotate("duration", duration.toMillis.toString)(ZIO.log(logMessage))
+      _       <- ZIO.logAnnotate("duration_ms", duration.toMillis.toString)(ZIO.log(logMessage))
     } yield result
 }
